@@ -9,6 +9,9 @@ if (process.env.NODE_ENV !== "production") {
 const port = process.env.PORT;
 if (!port) throw "Env var not set: PORT";
 
+const motCheckServiceHost = process.env.MOT_CHECK_SERVICE_HOST
+if (!motCheckServiceHost) throw "Env var not set: MOT_CHECK_SERVICE_HOST"
+
 var app = express();
 app.use(cors());
 
@@ -22,7 +25,7 @@ app.get("/vehicle-check", async function (req, res) {
 
   try {
     const response = await axios.get(
-      `https://beta.check-mot.service.gov.uk/trade/vehicles/mot-tests?registration=${req.query.registration}`,
+      `https://${motCheckServiceHost}/trade/vehicles/mot-tests?registration=${req.query.registration}`,
       {
         headers: {
           Accept: "application/json+v6",
