@@ -1,5 +1,6 @@
 const axios = require("axios");
-var express = require("express");
+const cors = require("cors");
+const express = require("express");
 
 if (process.env.NODE_ENV !== "production") {
   require("dotenv").config();
@@ -9,6 +10,7 @@ const port = process.env.PORT;
 if (!port) throw "Env var not set: PORT";
 
 var app = express();
+app.use(cors());
 
 app.get("/vehicle-check", async function (req, res) {
   console.log("GET:vehicle-check");
