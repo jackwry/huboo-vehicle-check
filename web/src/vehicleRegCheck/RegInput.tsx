@@ -1,36 +1,62 @@
 import { ErrorMessage, Field, Form, Formik } from "formik";
 import { useState } from "react";
-import axios from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
+import { DvlaVehicleInfo } from "./DvlaResponse";
 
 interface VehicleCheckFormValues {
   vehicleReg: string;
 }
 
-const RegInput: React.FC = () => {
-  const [vehicleDetails, setVehicleDetails] = useState<any | undefined>(
-    undefined
-  );
+const ukRegistrationRegex =
+  /^(?=.{1,7})(([a-zA-Z]?){1,3}(\d){1,3}([a-zA-Z]?){1,3})$/;
+
+const sanitiseRegistration = (registration: string): string =>
+  registration.trim().replace(" ", "");
+
+const validateRegistration = (value?: string): string | undefined => {
+  if (!value || value === "") return "Please enter a vehicle registration";
+
+  const sanitisedValue = sanitiseRegistration(value);
+  if (!sanitisedValue.match(ukRegistrationRegex))
+    return "Please enter a valid UK registration";
+};
+
+const RegInput: React.FC<{
+  setVehicleInfo: (vehicleInfo: DvlaVehicleInfo | undefined) => void;
+}> = (props) => {
+  const [errorMessage, setErrorMessage] = useState<string | undefined>("");
 
   const onSubmit = async (values: VehicleCheckFormValues): Promise<void> => {
+    props.setVehicleInfo(undefined);
     const sanitisedVehicleReg = values.vehicleReg.replace(" ", "");
 
-    const response = await axios.get(
-      `https://beta.check-mot.service.gov.uk/trade/vehicles/mot-tests?registration=${sanitisedVehicleReg}`,
-      {
-        headers: {
-          "x-api-key": "HybH0yr4Hj3eEgybT9pkn6B7PA769YDa8kt4wKdp",
-          Accept: "application/json+v6",
-        },
+    let response: AxiosResponse<DvlaVehicleInfo[]>;
+    try {
+      response = await axios.get<DvlaVehicleInfo[]>(
+        `http://localhost:9000/vehicle-check?registration=${sanitisedVehicleReg}`
+      );
+    } catch (err) {
+      const error = err as AxiosError<DvlaVehicleInfo[]>;
+      if (!error.response) {
+        setErrorMessage("Unknown error: No response returned from server.");
+        return;
       }
-    );
-
-    if (response.status !== 200) {
-      console.error("Error making request");
-      //return;
+      response = error.response;
     }
 
-    console.log(response.data);
-    setVehicleDetails(response);
+    if (response.status === 200) {
+      setErrorMessage(undefined);
+
+      props.setVehicleInfo(response.data[0]);
+    } else if (response.status === 404) {
+      setErrorMessage(
+        "Registration not found. Please enter a valid registration."
+      );
+    } else {
+      setErrorMessage(
+        "An error occurred. Please try again or contact the Huboo support team."
+      );
+    }
   };
 
   const initialValues: VehicleCheckFormValues = {
@@ -50,25 +76,28 @@ const RegInput: React.FC = () => {
               <Field
                 type="string"
                 name="vehicleReg"
-                validate={(value?: string): string | undefined => {
-                  console.log("validating reg");
-                  if (!value || value === "")
-                    return "Please enter a vehicle registration";
-                }}
-                className="border-2 rounded w-full p-1"
+                placeholder="eg. ZZ99 ABC"
+                validate={validateRegistration}
+                className="border-2 rounded w-full p-1 text-center"
               />
               <ErrorMessage
                 name="vehicleReg"
                 component="div"
-                className="text-sm text-red"
+                className="text-sm text-red-500 text-center"
               />
             </div>
 
-            <div>
+            {errorMessage && (
+              <div className="text-lg text-red-500 font-bold text-center">
+                {errorMessage}
+              </div>
+            )}
+
+            <div className="flex flex-row-reverse">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`float-right border-2 rounded p-2 w-1/3 md:w-1/6 ${
+                className={`border-2 rounded p-2 w-1/3 md:w-1/6 bg-emerald-300 text-white ${
                   !isValid && "border-red"
                 }`}
               >
@@ -78,8 +107,6 @@ const RegInput: React.FC = () => {
           </Form>
         )}
       </Formik>
-
-      <div>{vehicleDetails}</div>
     </div>
   );
 };

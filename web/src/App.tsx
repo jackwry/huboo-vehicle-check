@@ -1,12 +1,12 @@
 import Header from "./Header";
-import RegInput from "./vehicleRegCheck/RegInput";
+import VehicleRegCheck from "./vehicleRegCheck/VehicleRegCheck";
 
 const App: React.FC = () => (
   <>
     <Header />
 
     <div className="container mx-auto px-4">
-      <RegInput></RegInput>
+      <VehicleRegCheck></VehicleRegCheck>
     </div>
   </>
 );
