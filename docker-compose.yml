@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  api:
+    container_name: huboo-vehicle-check-api
+    build: ./api
+    ports:
+      - 9000:9000
+    environment:
+      - PORT=9000
+
+  web:
+    container_name: huboo-vehicle-check-web
+    build: ./web
+    ports:
+      - 3000:3000
